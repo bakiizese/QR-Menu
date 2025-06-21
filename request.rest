@@ -1,0 +1,22 @@
+post http://127.0.0.1:4000/admin-auth/register
+Content-Type: application/json
+
+{
+    "username": "jack",
+    "first_name": "jackson",
+    "last_name": "bob",
+    "password": "mypassbob",
+    "company_name": "3T",
+    "company_type": "juice House",
+    "role": "high"
+}
+
+###
+
+post http://127.0.0.1:4000/admin-auth/login
+Content-Type: application/json
+
+{
+    "username": "jack",
+    "password": "mypassbob"
+}
