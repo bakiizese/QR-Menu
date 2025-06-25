@@ -10,9 +10,6 @@ Meal.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    review_id: {
-      type: DataTypes.UUIDV4,
-    },
     created_by_id: {
       type: DataTypes.UUIDV4,
       allowNull: false,

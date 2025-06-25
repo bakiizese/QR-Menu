@@ -13,6 +13,10 @@ Review.init(
     created_by_id: {
       type: DataTypes.UUIDV4,
     },
+    meal_id: {
+      type: DataTypes.UUIDV4,
+      allowNull: false,
+    },
     rating: {
       type: DataTypes.INTEGER,
       allowNull: false,
