@@ -1,4 +1,4 @@
-import { jwt_verify } from "../utils/jwt";
+import { jwt_verify } from "../utils/jwt.js";
 
 export function superAdmin_authentication(req, res, next) {
   try {
@@ -30,13 +30,10 @@ export function superAdmin_authentication(req, res, next) {
 }
 
 export function admin_authentication(req, res, next) {
-  try {
-    req.cookies.jwt_token;
-  } catch (err) {
-    return res.status(500).json({ error: "jwt token missing", detail: err });
-  }
-
   const jwt_token = req.cookies.jwt_token;
+  if (!jwt_token) {
+    return res.status(500).json({ error: "jwt token missing" });
+  }
 
   try {
     const verify = jwt_verify(jwt_token);
@@ -45,7 +42,7 @@ export function admin_authentication(req, res, next) {
       return res.status(401).json({ error: "token not autherized" });
     }
 
-    req.user_id = verify.user_id;
+    req.self_id = verify.user_id;
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {

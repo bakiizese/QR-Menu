@@ -14,6 +14,10 @@ Meal.init(
       type: DataTypes.UUIDV4,
       allowNull: false,
     },
+    updated_by_id: {
+      type: DataTypes.UUIDV4,
+      allowNull: false,
+    },
     title: {
       type: DataTypes.STRING,
       allowNull: false,

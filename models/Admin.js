@@ -39,6 +39,10 @@ Admin.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    reset_token: {
+      type: DataTypes.STRING,
+      defaultValue: "",
+    },
   },
   {
     sequelize,

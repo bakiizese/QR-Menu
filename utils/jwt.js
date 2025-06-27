@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 export function gen_jwt_token(payload) {
   const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-    expiresIn: "20s",
+    expiresIn: "60m",
   });
 
   return token;
@@ -29,4 +29,12 @@ export function refresh_token_verify(refresh_token) {
     return verify;
   }
   return false;
+}
+
+export function gen_reset_token(username) {
+  const reset_token = jwt.sign(
+    { username: username },
+    process.env.JWT_RESET_KEY
+  );
+  return reset_token;
 }

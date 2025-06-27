@@ -2,7 +2,10 @@ import express from "express";
 import Admin from "../models/Admin.js";
 import { hash_password, verify_password } from "../utils/password.js";
 import { gen_jwt_token, gen_refresh_token } from "../utils/jwt.js";
-import { superAdmin_authentication } from "./middleware.js";
+import {
+  admin_authentication,
+  superAdmin_authentication,
+} from "./middleware.js";
 
 const authRouter = express.Router();
 
@@ -49,7 +52,8 @@ authRouter.post("/register", async (req, res) => {
   }
 
   //gen hash password
-  const hashed_password = hash_password(adminData["password"]);
+  const hashed_password = await hash_password(adminData["password"]);
+
   adminData["password"] = hashed_password;
 
   //create admin user
@@ -94,7 +98,7 @@ authRouter.post("/login", async (req, res) => {
     });
     res.cookie("jwt_token", jwt_token, {
       httpOnly: true,
-      maxAge: 20 * 1000,
+      maxAge: 60 * 60 * 1000,
     });
     res.cookie("jwt_refresh_token", jwt_refresh_token, {
       httpOnly: true,
@@ -107,7 +111,15 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.post("/logout", (req, res) => {});
+authRouter.post("/logout", admin_authentication, (req, res) => {
+  res.clearCookie("jwt_token", {
+    httpOnly: true,
+  });
+  res.clearCookie("jwt_refresh_token", {
+    httpOnly: true,
+  });
+  res.status(200).json({ user: "logged out" });
+});
 
 authRouter.post(
   "/add-admin",

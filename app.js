@@ -5,9 +5,11 @@ import association from "./models/Associations.js";
 import authRouter from "./routes/admin_auth_route.js";
 import adminRouter from "./routes/admin_route.js";
 import userRouter from "./routes/user_route.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 dotenv.config();
 
 const HOST = process.env.HOST;

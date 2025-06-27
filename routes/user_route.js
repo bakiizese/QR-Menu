@@ -24,8 +24,10 @@ userRouter.get("/meal/:id", async (req, res) => {
   try {
     const mealData = await Meal.findOne({
       where: { id: meal_id },
-      include: { model: Review },
-      where: { meal_id: meal_id },
+      include: {
+        model: Review,
+        where: { meal_id: meal_id },
+      },
     });
 
     if (mealData) {
