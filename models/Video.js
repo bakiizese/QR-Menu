@@ -25,7 +25,7 @@ Video.init(
     created_by_id: {
       type: DataTypes.UUIDV4,
       allowNull: false,
-      references: { model: "admin", key: "id" },
+      references: { model: "admins", key: "id" },
     },
   },
   { sequelize, modelName: "video" }

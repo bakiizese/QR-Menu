@@ -20,6 +20,7 @@ import {
 } from "../utils/password.js";
 import QRCode from "qrcode";
 import { uploadFields } from "../utils/upload.js";
+import fs, { cpSync } from "fs";
 
 const adminRouter = express.Router();
 
@@ -27,15 +28,14 @@ const adminKeys = [
   "first_name",
   "last_name",
   "username",
-  "reset_token",
   "company_name",
   "company_type",
   "admin_level",
 ];
-const mealKeys = ["created_by_id", "title", "is_available"];
+const mealKeys = ["created_by_id", "title", "is_available", "updated_by_id"];
 const classes = { image: Image, video: Video };
 
-//only for superadmin only
+//SupetAdmin Managment
 adminRouter.get("/profiles", superAdmin_authentication, async (req, res) => {
   try {
     const adminData = await Admin.findAll();
@@ -59,21 +59,6 @@ adminRouter.get("/profile/:id", superAdmin_authentication, async (req, res) => {
     return res.status(500).json({ error: err });
   }
 });
-adminRouter.put("/profile/:id", superAdmin_authentication, async (req, res) => {
-  const admin_id = req.params.id;
-  const updateData = req.body;
-
-  try {
-    const adminData = await Admin.findOne({ where: { id: admin_id } });
-    if (!adminData) {
-      return res.status(404).json({ error: "admin user not found" });
-    }
-    for (const key of adminKeys) {
-    }
-  } catch (err) {
-    return res.status(500).json({ error: err });
-  }
-});
 adminRouter.delete(
   "/admin-user/:id",
   superAdmin_authentication,
@@ -91,8 +76,8 @@ adminRouter.delete(
   }
 );
 
-//for admin and super admin
-adminRouter.get("/reset-token", async (req, res) => {
+//Profile Management
+adminRouter.post("/reset-token", async (req, res) => {
   const userData = req.body;
 
   if (!userData["username"]) {
@@ -128,7 +113,7 @@ adminRouter.get("/refresh-token", async (req, res) => {
   });
   res.status(201).json({ jwt_token: jwt_token });
 });
-adminRouter.put("/password", admin_authentication, async (req, res) => {
+adminRouter.put("/password", async (req, res) => {
   const passwordData = req.body;
 
   for (const key of ["reset_token", "password"]) {
@@ -137,7 +122,7 @@ adminRouter.put("/password", admin_authentication, async (req, res) => {
     }
   }
   try {
-    const updatePassword = update_password(
+    const updatePassword = await update_password(
       passwordData["reset_token"],
       passwordData["password"]
     );
@@ -199,6 +184,27 @@ adminRouter.put("/profile", admin_authentication, async (req, res) => {
     return res.status(500).json({ error: err });
   }
 });
+adminRouter.delete("/self", admin_authentication, async (req, res) => {
+  const self_id = req.self_id;
+
+  try {
+    const selfDestroy = await Admin.destroy({ where: { id: self_id } });
+    if (!selfDestroy) {
+      return res.status(404).json({ error: "admin user not found" });
+    }
+    res.clearCookie("jwt_token", {
+      httpOnly: true,
+    });
+    res.clearCookie("jwt_refresh_token", {
+      httpOnly: true,
+    });
+    return res.status(200).json({ admin: "user deleted successfuly" });
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
+});
+
+//Meal Management
 adminRouter.get("/all-meal", admin_authentication, async (req, res) => {
   try {
     const mealsData = await Meal.findAll();
@@ -230,7 +236,10 @@ adminRouter.post("/meal", admin_authentication, async (req, res) => {
       return res.status(400).json({ error: `${key} is missing` });
     }
   }
-
+  const mealExist = await Meal.findOne({ where: { title: mealData["title"] } });
+  if (mealExist) {
+    return res.status(400).json({ error: "meal already exists" });
+  }
   try {
     const newMeal = await Meal.create(mealData);
     if (newMeal) {
@@ -251,7 +260,15 @@ adminRouter.put("/meal/:id", admin_authentication, async (req, res) => {
       return res.status(404).json({ error: "meal not found" });
     }
     for (const key in updateData) {
-      mealData[key] = updateData[key];
+      if (["video", "image"].includes(key)) {
+        if (updateData[key].length < 1) {
+          mealData[key] = null;
+        } else {
+          mealData[key] = [...(mealData[key] || []), updateData[key]];
+        }
+      } else {
+        mealData[key] = updateData[key];
+      }
     }
     mealData.save();
     return res.status(200).json({ meal: "meal updated successfuly" });
@@ -276,6 +293,7 @@ adminRouter.delete("/meal/:id", admin_authentication, async (req, res) => {
 
 adminRouter.get("/preference", admin_authentication, (req, res) => {});
 adminRouter.put("/preference", admin_authentication, (req, res) => {});
+
 adminRouter.get("/all-review", admin_authentication, async (req, res) => {
   try {
     const reviewDatas = await Review.findAll();
@@ -315,12 +333,45 @@ adminRouter.get("/qrcode", admin_authentication, async (req, res) => {
     return res.status(500).json({ error: err });
   }
 });
+adminRouter.get("/all-video", admin_authentication, async (req, res) => {
+  const videoData = await Video.findAll();
+  if (videoData.length < 0) {
+    return res.status(404).json({ error: "videos not found" });
+  }
+  return res.status(200).json({ videos: videoData });
+});
+adminRouter.get("/all-image", admin_authentication, async (req, res) => {
+  const imageData = await Image.findAll();
+  if (imageData.length < 0) {
+    return res.status(404).json({ error: "images not found" });
+  }
+  return res.status(200).json({ images: imageData });
+});
+adminRouter.get("/video/:id", admin_authentication, async (req, res) => {
+  const video_id = req.params.id;
+  const videoData = await Video.findOne({ where: { id: video_id } });
+
+  if (!videoData) {
+    return res.status(404).json({ error: "video not found" });
+  }
+  return res.status(200).json({ video: videoData });
+});
+adminRouter.get("/image/:id", admin_authentication, async (req, res) => {
+  const image_id = req.params.id;
+  const imageData = await Image.findOne({ where: { id: image_id } });
+
+  if (!imageData) {
+    return res.status(404).json({ error: "image not found" });
+  }
+  return res.status(200).json({ image: imageData });
+});
 adminRouter.post(
   "/upload",
   admin_authentication,
   uploadFields,
   async (req, res) => {
     const file = req.files;
+    const self_id = req.self_id;
     if (!file) return res.status(400).json({ error: "file missing" });
 
     if (Object.entries(file).length === 0) {
@@ -332,6 +383,7 @@ adminRouter.post(
         for (const item of file[key]) {
           const uploadData = classes[item.fieldname].create({
             path: item.path,
+            created_by_id: self_id,
           });
           if (!uploadData) {
             return res
@@ -347,6 +399,71 @@ adminRouter.post(
     }
   }
 );
+adminRouter.put("/upload", admin_authentication, async (req, res) => {
+  const parentData = req.body;
+  const fileKeys = ["parent_id", "parent_name", "file_type", "file_id"];
 
-adminRouter.put("/upload", admin_authentication, async (req, res) => {});
+  for (const key of fileKeys) {
+    if (!parentData[key]) {
+      return res.status(400).json({ error: `${key} missing` });
+    }
+  }
+  try {
+    const fileData = await classes[parentData["file_type"]].findOne({
+      where: { id: parentData["file_id"] },
+    });
+
+    if (!fileData) {
+      return res
+        .status(404)
+        .json({ error: `${parentData["file_type"]} not found` });
+    }
+
+    const mealData = await Meal.findOne({
+      where: { id: parentData["parent_id"] },
+    });
+    if (!mealData) {
+      return res.status(404).json({ error: "meal not found" });
+    }
+
+    mealData[parentData["file_type"]] = [
+      ...(mealData[parentData["file_type"]] || []),
+      parentData["file_id"],
+    ];
+
+    mealData.save();
+    for (const key in parentData) {
+      fileData[key] = parentData[key];
+    }
+    fileData.save();
+    return res
+      .status(200)
+      .json({ error: `${parentData["file_type"]} updated successfuly` });
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
+});
+adminRouter.delete("/upload", admin_authentication, async (req, res) => {
+  const dataIds = req.body;
+
+  for (const item in dataIds) {
+    for (const key of dataIds[item]) {
+      let filePath = await classes[item].findOne({ where: { id: key } });
+      if (!filePath) {
+        return res.status(404).json({ error: "file not found" });
+      }
+      filePath = filePath.path;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          return res.status(500).json({ error: err });
+        }
+      });
+      const deleteData = await classes[item].destroy({ where: { id: key } });
+      if (!deleteData) {
+        return res.status(404).json({ error: "file not found" });
+      }
+    }
+  }
+  return res.status(200).json({ file: "file deleted successfully" });
+});
 export default adminRouter;

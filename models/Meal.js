@@ -20,13 +20,14 @@ Meal.init(
     },
     title: {
       type: DataTypes.STRING,
+      unique: true,
       allowNull: false,
     },
     image: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
     },
     video: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
     },
     max_eta: {
       type: DataTypes.INTEGER,

@@ -24,7 +24,7 @@ export async function update_password(reset_token, new_password) {
       return false;
     }
     admin_user.reset_token = "";
-    admin_user.password = hash_password(new_password);
+    admin_user.password = await hash_password(new_password);
     admin_user.save();
     return true;
   } catch (err) {

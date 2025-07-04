@@ -16,9 +16,7 @@ const HOST = process.env.HOST;
 const PORT = process.env.PORT;
 
 association();
-sequelize
-  .sync({ force: true })
-  .then(() => console.log("tables successfult created"));
+sequelize.sync().then(() => console.log("tables successfult created"));
 
 //admin-routes
 app.use("/admin-auth", authRouter);

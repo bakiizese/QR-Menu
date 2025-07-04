@@ -1,11 +1,17 @@
 import express from "express";
 import Admin from "../models/Admin.js";
 import { hash_password, verify_password } from "../utils/password.js";
-import { gen_jwt_token, gen_refresh_token } from "../utils/jwt.js";
+import {
+  gen_invitation_id,
+  gen_jwt_token,
+  gen_refresh_token,
+} from "../utils/jwt.js";
 import {
   admin_authentication,
   superAdmin_authentication,
+  invitation_authentication,
 } from "./middleware.js";
+import Temp from "../models/Temp.js";
 
 const authRouter = express.Router();
 
@@ -19,7 +25,7 @@ const adminKeys = [
   "company_type",
 ];
 
-authRouter.post("/register", async (req, res) => {
+async function admin_register(req, res, add = false) {
   const adminData = req.body;
 
   //check data and dataType
@@ -59,10 +65,17 @@ authRouter.post("/register", async (req, res) => {
   //create admin user
   try {
     const admin = await Admin.create(adminData);
+    if (add) {
+      await Temp.destroy({ where: { id: req.params.invitation_id } });
+    }
     return res.status(201).json({ admin: admin.id });
   } catch (err) {
     return res.status(500).json({ error: err });
   }
+}
+
+authRouter.post("/register", async (req, res) => {
+  admin_register(req, res);
 });
 
 authRouter.post("/login", async (req, res) => {
@@ -83,7 +96,7 @@ authRouter.post("/login", async (req, res) => {
     if (!admin) {
       return res.status(404).json({ error: "admin user not found" });
     }
-    const verify = verify_password(adminData["password"], admin.password);
+    const verify = await verify_password(adminData["password"], admin.password);
 
     if (!verify) {
       return res.status(401).json({ error: "incorrect password" });
@@ -121,10 +134,23 @@ authRouter.post("/logout", admin_authentication, (req, res) => {
   res.status(200).json({ user: "logged out" });
 });
 
+authRouter.get("/invite-admin", superAdmin_authentication, async (req, res) => {
+  const adminData = await Admin.findOne({ where: { id: req.self_id } });
+  const invitation_id = gen_invitation_id({
+    company_name: adminData.company_name,
+    company_type: adminData.company_type,
+    admin_level: "admin",
+  });
+  const tempData = await Temp.create({ id: invitation_id });
+  return res.status(201).json({ invitation_id: invitation_id });
+});
+
 authRouter.post(
-  "/add-admin",
-  superAdmin_authentication,
-  async (req, res) => {}
+  "/add-admin/:invitation_id",
+  invitation_authentication,
+  async (req, res) => {
+    admin_register(req, res, true);
+  }
 );
 
 export default authRouter;

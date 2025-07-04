@@ -31,10 +31,27 @@ export function refresh_token_verify(refresh_token) {
   return false;
 }
 
+//verify reset token to make sure user uses it on time
+// and while checking make sure to remove the reset token from admin user
 export function gen_reset_token(username) {
   const reset_token = jwt.sign(
     { username: username },
-    process.env.JWT_RESET_KEY
+    process.env.PASSWORD_RESET_KEY
   );
   return reset_token;
+}
+
+export function gen_invitation_id(payload) {
+  const invitation_id = jwt.sign(payload, process.env.INVITATION_ID_KEY, {
+    expiresIn: "1h",
+  });
+  return invitation_id;
+}
+
+export function verify_inivitation_id(invitation_id) {
+  const verify = jwt.verify(invitation_id, process.env.INVITATION_ID_KEY);
+  if (verify) {
+    return verify;
+  }
+  return verify;
 }
