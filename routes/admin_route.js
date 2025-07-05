@@ -399,6 +399,8 @@ adminRouter.post(
     }
   }
 );
+
+//fix for multiple uploads or updates of image and video to be stored correctly as an array
 adminRouter.put("/upload", admin_authentication, async (req, res) => {
   const parentData = req.body;
   const fileKeys = ["parent_id", "parent_name", "file_type", "file_id"];
