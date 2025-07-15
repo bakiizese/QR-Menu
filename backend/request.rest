@@ -1,0 +1,68 @@
+post http://127.0.0.1:4000/admin-auth/register
+Content-Type: application/json
+
+{
+    "username": "jack",
+    "first_name": "jackson",
+    "last_name": "bob",
+    "password": "sss",
+    "company_name": "3T",
+    "company_type": "juice House",
+    "admin_level": "high"
+}
+
+###
+
+post http://127.0.0.1:4000/admin-auth/login
+Content-Type: application/json
+
+{
+    "username": "jack",
+    "password": "sss"
+}
+
+###
+get http://127.0.0.1:4000/admin/reset-token
+Content-Type: application/json
+{
+    "username": "jack"
+}
+
+###
+put http://127.0.0.1:4000/admin/password
+Content-Type: application/json
+{
+    "username": "jack",
+    "reset_token": "",
+}
+
+###
+post http://127.0.0.1:4000/admin/meal 
+Content-Type: application/json
+
+{
+    "created_by_id": "0d013056-1253-4d6a-b155-6956ada67a1d",
+    "title": "avocado juice",
+    "is_available": true
+}
+
+###
+get http://127.0.0.1:4000/admin/all-meal
+Content-Type: application/json
+
+###
+get http://127.0.0.1:4000/admin/refresh-token
+Content-Type: application/json
+
+###
+get http://127.0.0.1:4000/admin/profile
+Content-Type: application/json
+
+###
+put http://127.0.0.1:4000/admin/profile
+Content-Type: application/json
+
+{
+
+    "admin_level": "superadmin"
+}
